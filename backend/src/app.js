@@ -11,14 +11,19 @@
 // usando multer com diskStorage. Não utilize provedores externos.
 
 const express = require('express');
+const fs = require('node:fs');
+const path = require('node:path');
+const documentRoutes = require('./routes/documentRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const STORAGE_DIR = process.env.STORAGE_DIR || path.join(__dirname, '../storage');
+
+fs.mkdirSync(STORAGE_DIR, { recursive: true });
 
 app.use(express.json());
+app.use(documentRoutes);
 
-// Endpoint de verificação de saúde. As demais rotas (/upload, /documents,
-// /documents/:id/download) serão implementadas durante o Passo 2.
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });

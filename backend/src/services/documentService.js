@@ -6,16 +6,9 @@ class DocumentService {
   }
 
   createDocument(file, owner = 'anonymous') {
-    const documentMetadata = {
-      id: randomUUID(),
-      originalName: file.originalname,
-      storageName: file.filename,
-      size: file.size,
-      mimeType: file.mimetype,
-      uploadedAt: new Date().toISOString(),
-      owner,
-    };
+    this.validateFile(file);
 
+    const documentMetadata = this.buildDocumentMetadata(file, owner);
     return this.repository.saveMetadata(documentMetadata);
   }
 
@@ -24,19 +17,55 @@ class DocumentService {
   }
 
   getDocumentById(id) {
-    const document = this.repository.findById(id);
+    this.validateId(id);
 
+    const document = this.repository.findById(id);
     if (!document) {
-      const error = new Error('Documento não encontrado');
-      error.code = 'DOCUMENT_NOT_FOUND';
-      throw error;
+      throw this.createDocumentNotFoundError(id);
     }
 
     return document;
   }
 
   getDocumentPath(storageName) {
+    this.validateStorageName(storageName);
     return this.repository.getStoragePath(storageName);
+  }
+
+  buildDocumentMetadata(file, owner) {
+    return {
+      id: randomUUID(),
+      originalName: file.originalname,
+      storageName: file.filename,
+      size: file.size,
+      mimeType: file.mimetype,
+      uploadedAt: new Date().toISOString(),
+      owner,
+    };
+  }
+
+  validateFile(file) {
+    if (!file || typeof file.originalname !== 'string' || typeof file.filename !== 'string') {
+      throw new Error('Arquivo inválido');
+    }
+  }
+
+  validateId(id) {
+    if (!id || typeof id !== 'string') {
+      throw new Error('ID inválido');
+    }
+  }
+
+  validateStorageName(storageName) {
+    if (!storageName || typeof storageName !== 'string' || storageName.includes('/') || storageName.includes('\\')) {
+      throw new Error('Nome de arquivo de armazenamento inválido');
+    }
+  }
+
+  createDocumentNotFoundError(id) {
+    const error = new Error(`Documento não encontrado: ${id}`);
+    error.code = 'DOCUMENT_NOT_FOUND';
+    return error;
   }
 }
 
